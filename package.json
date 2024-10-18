@@ -16,7 +16,11 @@
     "@remix-run/serve": "^2.13.1",
     "isbot": "^4.1.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "remix-auth": "^3.7.0",
+    "remix-auth-form": "^1.5.0",
+    "remix-auth-github": "^2.0.0",
+    "remix-auth-google": "^2.0.0"
   },
   "devDependencies": {
     "@remix-run/dev": "^2.13.1",
