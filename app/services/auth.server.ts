@@ -13,7 +13,10 @@ type User = {
 };
 
 // Create an instance of the authenticator
-export let authenticator = new Authenticator<User>(sessionStorage);
+export const authenticator = new Authenticator<User>(sessionStorage);
+
+// Base URL must be set
+invariant(process.env.BASE_URL, "BASE_URL must be set");
 
 // GitHub Strategy
 invariant(process.env.GITHUB_CLIENT_ID, "GITHUB_CLIENT_ID must be set");
@@ -21,9 +24,9 @@ invariant(process.env.GITHUB_CLIENT_SECRET, "GITHUB_CLIENT_SECRET must be set");
 
 authenticator.use(new GitHubStrategy(
   {
-    clientID: process.env.GITHUB_CLIENT_ID,
+    clientId: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/github/callback",
+    redirectURI: `${process.env.BASE_URL}/auth/github/callback`,
   },
   async ({ profile }) => {
     // Here you would find or create a user in your database
@@ -43,7 +46,7 @@ authenticator.use(new GoogleStrategy(
   {
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/callback",
+    callbackURL: `${process.env.BASE_URL}/auth/google/callback`,
   },
   async ({ profile }) => {
     // Here you would find or create a user in your database
@@ -57,8 +60,8 @@ authenticator.use(new GoogleStrategy(
 
 // Form Strategy for email/password
 authenticator.use(new FormStrategy(async ({ form }) => {
-  let email = form.get("email") as string;
-  let password = form.get("password") as string;
+  const email = form.get("email") as string;
+  const password = form.get("password") as string;
 
   invariant(email, "email must be provided");
   invariant(password, "password must be provided");
