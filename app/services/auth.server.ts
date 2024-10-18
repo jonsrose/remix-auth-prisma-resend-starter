@@ -30,6 +30,7 @@ authenticator.use(new GitHubStrategy(
   },
   async ({ profile }) => {
     // Here you would find or create a user in your database
+    console.log('GitHubStrategy');
     return {
       id: profile.id,
       email: profile.emails?.[0].value ?? "",

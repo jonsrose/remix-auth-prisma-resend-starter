@@ -5,5 +5,6 @@ import { redirect } from "@remix-run/node";
 export const loader: LoaderFunction = () => redirect("/login");
 
 export const action: ActionFunction = ({ request }) => {
+  console.log('ActionFunction');
   return authenticator.authenticate("github", request);
 };
