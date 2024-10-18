@@ -1,5 +1,7 @@
+import { Form } from "@remix-run/react";
+import type { LoaderFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { json, LoaderFunction } from "@remix-run/node";
 import { authenticator } from "~/services/auth.server";
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -10,11 +12,17 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export default function Dashboard() {
-  const { user } = useLoaderData();
+  const { user } = useLoaderData<{ user: any }>();
+
   return (
     <div>
       <h1>Dashboard</h1>
-      <p>Welcome, {user.name}!</p>
+      <p>Welcome, {user.name || user.email}!</p>
+      
+      {/* Logout Form */}
+      <Form action="/logout" method="post">
+        <button type="submit">Logout</button>
+      </Form>
     </div>
   );
 }

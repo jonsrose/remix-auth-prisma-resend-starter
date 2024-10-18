@@ -75,3 +75,7 @@ authenticator.use(new FormStrategy(async ({ form }) => {
     name: "Test User",
   };
 }));
+
+export const logout = async (request: Request) => {
+  await authenticator.logout(request, { redirectTo: "/login" });
+};
