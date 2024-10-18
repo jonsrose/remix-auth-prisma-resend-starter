@@ -1,8 +1,14 @@
 import { Form, useActionData } from "@remix-run/react";
 import type { ActionFunction } from "@remix-run/node";
 import { authenticator } from "~/services/auth.server";
+import { useEffect } from "react";
 
-export let action: ActionFunction = async ({ request }) => {
+// Add this type definition
+type ActionData = {
+  error?: string;
+};
+
+export const action: ActionFunction = async ({ request }) => {
   return await authenticator.authenticate("form", request, {
     successRedirect: "/dashboard",
     failureRedirect: "/login",
@@ -10,7 +16,13 @@ export let action: ActionFunction = async ({ request }) => {
 };
 
 export default function Login() {
-  const actionData = useActionData();
+  const actionData = useActionData() as ActionData;
+  // Remove the following line:
+  // const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log("Login component mounted");
+  }, []);
 
   return (
     <div>
@@ -23,7 +35,9 @@ export default function Login() {
       <hr />
       <a href="/auth/github">Login with GitHub</a>
       <br />
-      <a href="/auth/google">Login with Google</a>
+      <Form action="/auth/google" method="post">
+        <button type="submit">Login with Google</button>
+      </Form>
       {actionData?.error && <p>{actionData.error}</p>}
     </div>
   );

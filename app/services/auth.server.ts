@@ -50,6 +50,7 @@ authenticator.use(new GoogleStrategy(
     callbackURL: `${process.env.BASE_URL}/auth/google/callback`,
   },
   async ({ profile }) => {
+    console.log("Google strategy callback", profile);
     // Here you would find or create a user in your database
     return {
       id: profile.id,
