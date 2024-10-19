@@ -43,11 +43,12 @@ authenticator.use(new GitHubStrategy(
 invariant(process.env.GOOGLE_CLIENT_ID, "GOOGLE_CLIENT_ID must be set");
 invariant(process.env.GOOGLE_CLIENT_SECRET, "GOOGLE_CLIENT_SECRET must be set");
 
-authenticator.use(new GoogleStrategy(
+const googleStrategy = new GoogleStrategy(
   {
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: `${process.env.BASE_URL}/auth/google/callback`,
+    prompt: "select_account",
   },
   async ({ profile }) => {
     console.log("Google strategy callback", profile);
@@ -58,7 +59,10 @@ authenticator.use(new GoogleStrategy(
       name: profile.displayName,
     };
   }
-));
+);
+
+// Add this line to use the Google strategy
+authenticator.use(googleStrategy);
 
 // Form Strategy for email/password
 authenticator.use(new FormStrategy(async ({ form }) => {
