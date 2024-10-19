@@ -1,43 +1,56 @@
-import { Form, useActionData } from "@remix-run/react";
-import type { ActionFunction } from "@remix-run/node";
+import { Form, useActionData, useNavigation } from "@remix-run/react";
+import type { ActionFunction, ActionFunctionArgs } from "@remix-run/node";
 import { authenticator } from "~/services/auth.server";
-import { useEffect } from "react";
+import { useState } from "react";
+import { json } from "@remix-run/node";
 
 // Add this type definition
 type ActionData = {
   error?: string;
 };
 
-export const action: ActionFunction = async ({ request }) => {
-  return await authenticator.authenticate("form", request, {
-    successRedirect: "/dashboard",
-    failureRedirect: "/login",
-  });
+export const action: ActionFunction = async ({ request }: ActionFunctionArgs) => {
+  try {
+    return await authenticator.authenticate("form", request, {
+      successRedirect: "/dashboard",
+      throwOnError: true,
+    });
+  } catch (error) {
+    // Handle errors
+    if (error instanceof Error) {
+      return json({ error: error.message });
+    }
+    return json({ error: "An unknown error occurred" });
+  }
 };
 
 export default function Login() {
-  const actionData = useActionData() as ActionData;
-  // Remove the following line:
-  // const navigate = useNavigate();
+  const [isLogin, setIsLogin] = useState(true);
+  const actionData = useActionData<ActionData>();
+  const navigation = useNavigation();
 
-  useEffect(() => {
-    console.log("Login component mounted");
-  }, []);
+  const toggleMode = () => setIsLogin(!isLogin);
 
   return (
     <div>
-      <h1>Login</h1>
+      <h1>{isLogin ? "Login" : "Sign Up"}</h1>
       <Form method="post">
-        <input type="email" name="email" required />
-        <input type="password" name="password" required />
-        <button type="submit">Log in</button>
+        <input type="hidden" name="action" value={isLogin ? "login" : "signup"} />
+        <div>
+          <label htmlFor="email">Email:</label>
+          <input type="email" id="email" name="email" required />
+        </div>
+        <div>
+          <label htmlFor="password">Password:</label>
+          <input type="password" id="password" name="password" required />
+        </div>
+        <button type="submit" disabled={navigation.state === "submitting"}>
+          {isLogin ? "Login" : "Sign Up"}
+        </button>
       </Form>
-      <hr />
-      <a href="/auth/github">Login with GitHub</a>
-      <br />
-      <Form action="/auth/google" method="post">
-        <button type="submit">Login with Google</button>
-      </Form>
+      <button onClick={toggleMode}>
+        {isLogin ? "Need an account? Sign up" : "Already have an account? Login"}
+      </button>
       {actionData?.error && <p>{actionData.error}</p>}
     </div>
   );
