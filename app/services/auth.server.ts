@@ -45,31 +45,26 @@ authenticator.use(new GitHubStrategy(
 invariant(process.env.GOOGLE_CLIENT_ID, "GOOGLE_CLIENT_ID must be set");
 invariant(process.env.GOOGLE_CLIENT_SECRET, "GOOGLE_CLIENT_SECRET must be set");
 
-const googleStrategy = new GoogleStrategy(
+authenticator.use(new GoogleStrategy(
   {
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${process.env.BASE_URL}/auth/google/callback`,
-    prompt: "select_account",
+    callbackURL: "https://www-dev.aiutils.site/auth/google/callback", // Make sure this URL is correct
   },
   async ({ profile }) => {
-    console.log("Google strategy callback", profile);
-    
+    const email = profile.emails[0].value;
+    const name = profile.displayName;
+
     const user = await prisma.user.upsert({
-      where: { email: profile.emails[0].value },
-      update: { name: profile.displayName },
-      create: {
-        email: profile.emails[0].value,
-        name: profile.displayName,
-      },
+      where: { email },
+      update: { name },
+      create: { email, name },
     });
 
+    console.log("User created/updated:", user);
     return user;
   }
-);
-
-// Add this line to use the Google strategy
-authenticator.use(googleStrategy);
+));
 
 // Form Strategy for email/password
 authenticator.use(
