@@ -4,6 +4,7 @@ import { GitHubStrategy } from "remix-auth-github";
 import { GoogleStrategy } from "remix-auth-google";
 import { FormStrategy } from "remix-auth-form";
 import invariant from "tiny-invariant";
+import { prisma } from "~/services/db.server";
 
 // Define a user type
 type User = {
@@ -52,12 +53,17 @@ const googleStrategy = new GoogleStrategy(
   },
   async ({ profile }) => {
     console.log("Google strategy callback", profile);
-    // Here you would find or create a user in your database
-    return {
-      id: profile.id,
-      email: profile.emails?.[0].value ?? "",
-      name: profile.displayName,
-    };
+    
+    const user = await prisma.user.upsert({
+      where: { email: profile.emails[0].value },
+      update: { name: profile.displayName },
+      create: {
+        email: profile.emails[0].value,
+        name: profile.displayName,
+      },
+    });
+
+    return user;
   }
 );
 
