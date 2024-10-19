@@ -1,5 +1,5 @@
-import { Form, useActionData, useNavigation } from "@remix-run/react";
-import type { ActionFunction, ActionFunctionArgs } from "@remix-run/node";
+import { Form, useActionData, useNavigation, useLoaderData } from "@remix-run/react";
+import type { ActionFunction, ActionFunctionArgs, LoaderFunction } from "@remix-run/node";
 import { authenticator } from "~/services/auth.server";
 import { useState } from "react";
 import { json } from "@remix-run/node";
@@ -7,6 +7,10 @@ import { json } from "@remix-run/node";
 // Add this type definition
 type ActionData = {
   error?: string;
+};
+
+export const loader: LoaderFunction = async ({ request }) => {
+  return { request };
 };
 
 export const action: ActionFunction = async ({ request }: ActionFunctionArgs) => {
@@ -28,6 +32,7 @@ export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
+  const { request } = useLoaderData<{ request: Request }>();
 
   const toggleMode = () => setIsLogin(!isLogin);
 
@@ -48,6 +53,14 @@ export default function Login() {
           {isLogin ? "Login" : "Sign Up"}
         </button>
       </Form>
+      <div>
+        <button onClick={() => authenticator.authenticate("google", request)}>
+          Login with Google
+        </button>
+        <button onClick={() => authenticator.authenticate("github", request)}>
+          Login with GitHub
+        </button>
+      </div>
       <button onClick={toggleMode}>
         {isLogin ? "Need an account? Sign up" : "Already have an account? Login"}
       </button>
