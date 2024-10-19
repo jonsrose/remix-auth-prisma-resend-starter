@@ -31,13 +31,22 @@ authenticator.use(new GitHubStrategy(
     redirectURI: `${process.env.BASE_URL}/auth/github/callback`,
   },
   async ({ profile }) => {
-    // Here you would find or create a user in your database
-    console.log('GitHubStrategy');
-    return {
-      id: profile.id,
-      email: profile.emails?.[0].value ?? "",
-      name: profile.displayName,
-    };
+    const email = profile.emails?.[0]?.value;
+    const name = profile.displayName;
+
+    invariant(email, "GitHub email must be available");
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: { name },
+      create: { 
+        email, 
+        name,
+      },
+    });
+
+    console.log("GitHub user created/updated:", user);
+    return user;
   }
 ));
 
@@ -58,7 +67,10 @@ authenticator.use(new GoogleStrategy(
     const user = await prisma.user.upsert({
       where: { email },
       update: { name },
-      create: { email, name },
+      create: { 
+        email, 
+        name 
+      },
     });
 
     console.log("User created/updated:", user);
