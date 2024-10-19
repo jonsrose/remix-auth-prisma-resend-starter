@@ -5,6 +5,7 @@ import { GoogleStrategy } from "remix-auth-google";
 import { FormStrategy } from "remix-auth-form";
 import invariant from "tiny-invariant";
 import { prisma } from "~/services/db.server";
+import bcryptjs from "bcryptjs";
 
 // Define a user type
 type User = {
@@ -71,21 +72,52 @@ const googleStrategy = new GoogleStrategy(
 authenticator.use(googleStrategy);
 
 // Form Strategy for email/password
-authenticator.use(new FormStrategy(async ({ form }) => {
-  const email = form.get("email") as string;
-  const password = form.get("password") as string;
+authenticator.use(
+  new FormStrategy(async ({ form }) => {
+    const email = form.get("email") as string;
+    const password = form.get("password") as string;
+    const action = form.get("action") as string;
 
-  invariant(email, "email must be provided");
-  invariant(password, "password must be provided");
+    invariant(email, "email must be provided");
+    invariant(password, "password must be provided");
+    invariant(action, "action must be provided");
 
-  // Here you would validate the user credentials
-  // For this example, we'll just return a mock user
-  return {
-    id: "1",
-    email,
-    name: "Test User",
-  };
-}));
+    if (action === "signup") {
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        throw new Error("User already exists");
+      }
+
+      // Create new user
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          password: await bcryptjs.hash(password, 10),
+          name: email.split("@")[0], // Use part of email as name
+        },
+      });
+
+      return newUser;
+    } else if (action === "login") {
+      // Find user by email
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      // Verify password
+      const isValid = await bcryptjs.compare(password, user.password);
+      if (!isValid) {
+        throw new Error("Invalid password");
+      }
+
+      return user;
+    } else {
+      throw new Error("Invalid action");
+    }
+  })
+);
 
 export const logout = async (request: Request) => {
   await authenticator.logout(request, { redirectTo: "/login" });
