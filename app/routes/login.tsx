@@ -53,17 +53,16 @@ export default function Login() {
           {isLogin ? "Login" : "Sign Up"}
         </button>
       </Form>
-      <div>
-        <button onClick={() => authenticator.authenticate("google", request)}>
-          Login with Google
-        </button>
-        <button onClick={() => authenticator.authenticate("github", request)}>
-          Login with GitHub
-        </button>
-      </div>
       <button onClick={toggleMode}>
         {isLogin ? "Need an account? Sign up" : "Already have an account? Login"}
       </button>
+      <div>
+        <a href="/auth/github">Login with GitHub</a>
+        <br />
+        <Form action="/auth/google" method="post">
+          <button type="submit">Login with Google</button>
+        </Form>
+      </div>
       {actionData?.error && <p>{actionData.error}</p>}
     </div>
   );
