@@ -32,7 +32,7 @@ export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
-  const { request } = useLoaderData<{ request: Request }>();
+  useLoaderData<{ request: Request }>();
 
   const toggleMode = () => setIsLogin(!isLogin);
 
