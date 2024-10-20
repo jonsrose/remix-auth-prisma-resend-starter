@@ -15,11 +15,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return redirect("/login");
   }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  console.log("User from database:", user);
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, name: true },
+  });
 
   if (!user) {
-    console.log("User not found in database, redirecting to login");
+    console.log("User not found, redirecting to login");
     return redirect("/login");
   }
 
@@ -28,7 +30,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     select: { provider: true },
   });
 
-  return json({ user, connectedAccounts: accounts.map((a: { provider: string }) => a.provider) });
+  console.log("User found, returning dashboard data");
+  return json({ user, connectedAccounts: accounts.map(a => a.provider) });
 }
 
 export default function Dashboard() {

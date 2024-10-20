@@ -1,8 +1,9 @@
-import { Form, useActionData, useNavigation, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import type { ActionFunction, ActionFunctionArgs, LoaderFunction } from "@remix-run/node";
 import { authenticator } from "~/services/auth.server";
 import { useState } from "react";
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { commitSession, getSession } from "~/services/session.server";
 
 // Add this type definition
 type ActionData = {
@@ -15,16 +16,44 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export const action: ActionFunction = async ({ request }: ActionFunctionArgs) => {
   try {
-    return await authenticator.authenticate("form", request, {
-      successRedirect: "/dashboard",
-      throwOnError: true,
-    });
-  } catch (error) {
-    // Handle errors
-    if (error instanceof Error) {
-      return json({ error: error.message });
+    console.log("Login action started");
+    const clonedRequest = request.clone(); // Clone the request
+    const formData = await clonedRequest.formData();
+    const action = formData.get("action");
+    console.log("Form action:", action);
+
+    if (action === "signup" || action === "login") {
+      const user = await authenticator.authenticate("form", request, {
+        failureRedirect: "/login",
+      });
+      console.log("Authentication result:", user);
+
+      if (user.id) {
+        console.log("User authenticated successfully, setting session");
+        const session = await getSession(request.headers.get("Cookie"));
+        session.set("userId", user.id);
+
+        console.log("Redirecting to dashboard");
+        return redirect("/dashboard", {
+          headers: {
+            "Set-Cookie": await commitSession(session),
+          },
+        });
+      } else {
+        console.error("Authentication failed:", user);
+        return json({ error: "Authentication failed" }, { status: 400 });
+      }
     }
-    return json({ error: "An unknown error occurred" });
+
+    console.error("Invalid action:", action);
+    return json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    console.error("Login error:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    return json({ error: "An unknown error occurred" }, { status: 500 });
   }
 };
 
