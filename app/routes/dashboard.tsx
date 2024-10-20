@@ -1,13 +1,12 @@
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, Link } from "@remix-run/react";
 import { authenticator } from "~/services/auth.server";
 import { prisma } from "~/services/db.server";
+import { getSession } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   console.log("Dashboard loader started");
-  const session = await sessionStorage.getSession(
-    request.headers.get("Cookie")
-  );
+  const session = await getSession(request.headers.get("Cookie"));
   const userId = session.get("userId");
   console.log("Session userId:", userId);
 
@@ -44,7 +43,7 @@ export default function Dashboard() {
           <li key={provider}>{provider}</li>
         ))}
       </ul>
-      {/* Rest of your dashboard component */}
+      <Link to="/logout">Logout</Link>
     </div>
   );
 }
