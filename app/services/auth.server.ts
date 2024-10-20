@@ -36,12 +36,24 @@ authenticator.use(new GitHubStrategy(
 
     invariant(email, "GitHub email must be available");
 
-    const user = await prisma.user.upsert({
-      where: { email },
-      update: { name },
-      create: { 
-        email, 
-        name,
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({ data: { email, name } });
+    }
+
+    await prisma.account.upsert({
+      where: { 
+        provider_providerAccountId: {
+          provider: 'github',
+          providerAccountId: profile.id
+        }
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        type: 'oauth',
+        provider: 'github',
+        providerAccountId: profile.id,
       },
     });
 
@@ -58,18 +70,30 @@ authenticator.use(new GoogleStrategy(
   {
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://www-dev.aiutils.site/auth/google/callback", // Make sure this URL is correct
+    callbackURL: `${process.env.BASE_URL}/auth/google/callback`,
   },
   async ({ profile }) => {
     const email = profile.emails[0].value;
     const name = profile.displayName;
 
-    const user = await prisma.user.upsert({
-      where: { email },
-      update: { name },
-      create: { 
-        email, 
-        name 
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({ data: { email, name } });
+    }
+
+    await prisma.account.upsert({
+      where: { 
+        provider_providerAccountId: {
+          provider: 'google',
+          providerAccountId: profile.id
+        }
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        type: 'oauth',
+        provider: 'google',
+        providerAccountId: profile.id,
       },
     });
 
@@ -89,34 +113,50 @@ authenticator.use(
     invariant(password, "password must be provided");
     invariant(action, "action must be provided");
 
+    let user = await prisma.user.findUnique({ where: { email } });
+
     if (action === "signup") {
-      // Check if user already exists
-      const existingUser = await prisma.user.findUnique({ where: { email } });
-      if (existingUser) {
+      if (user) {
         throw new Error("User already exists");
       }
 
-      // Create new user
-      const newUser = await prisma.user.create({
-        data: {
-          email,
-          password: await bcryptjs.hash(password, 10),
-          name: email.split("@")[0], // Use part of email as name
+      user = await prisma.user.create({
+        data: { 
+          email, 
+          name: email.split("@")[0],
         },
       });
 
-      return newUser;
+      await prisma.account.create({
+        data: {
+          userId: user.id,
+          type: 'credentials',
+          provider: 'email',
+          providerAccountId: email,
+          password: await bcryptjs.hash(password, 10),
+        },
+      });
+
+      return user;
     } else if (action === "login") {
-      // Find user by email
-      const user = await prisma.user.findUnique({ where: { email } });
       if (!user) {
-        throw new Error("User not found");
+        throw new Error("Invalid login");
       }
 
-      // Verify password
-      const isValid = await bcryptjs.compare(password, user.password);
+      const account = await prisma.account.findFirst({
+        where: { 
+          userId: user.id, 
+          provider: 'email' 
+        },
+      });
+
+      if (!account || !account.password) {
+        throw new Error("Invalid login");
+      }
+
+      const isValid = await bcryptjs.compare(password, account.password);
       if (!isValid) {
-        throw new Error("Invalid password");
+        throw new Error("Invalid login");
       }
 
       return user;

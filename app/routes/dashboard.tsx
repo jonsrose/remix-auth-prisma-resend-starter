@@ -1,6 +1,6 @@
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { sessionStorage } from "~/services/session.server";
+import { authenticator } from "~/services/auth.server";
 import { prisma } from "~/services/db.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -24,19 +24,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return redirect("/login");
   }
 
-  console.log("User authenticated, returning dashboard data");
-  return json({ user });
+  const accounts = await prisma.account.findMany({
+    where: { userId: user.id },
+    select: { provider: true },
+  });
+
+  return json({ user, connectedAccounts: accounts.map((a: { provider: string }) => a.provider) });
 }
 
 export default function Dashboard() {
-  const { user } = useLoaderData<typeof loader>();
+  const { user, connectedAccounts } = useLoaderData<typeof loader>();
+
   return (
     <div>
-      <h1>Welcome, {user.name}!</h1>
+      <h1>Welcome, {user.name || user.email}!</h1>
+      <h2>Connected Accounts:</h2>
+      <ul>
+        {connectedAccounts.map((provider: string) => (
+          <li key={provider}>{provider}</li>
+        ))}
+      </ul>
       {/* Rest of your dashboard component */}
-      <form action="/logout" method="post">
-        <button type="submit">Logout</button>
-      </form>
     </div>
   );
 }
