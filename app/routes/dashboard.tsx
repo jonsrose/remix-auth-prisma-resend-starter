@@ -1,6 +1,5 @@
 import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link } from "@remix-run/react";
-import { authenticator } from "~/services/auth.server";
 import { prisma } from "~/services/db.server";
 import { getSession } from "~/services/session.server";
 
@@ -31,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   console.log("User found, returning dashboard data");
-  return json({ user, connectedAccounts: accounts.map(a => a.provider) });
+  return json({ user, connectedAccounts: accounts.map((a: { provider: string }) => a.provider) });
 }
 
 export default function Dashboard() {

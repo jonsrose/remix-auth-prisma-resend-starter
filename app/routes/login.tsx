@@ -4,6 +4,7 @@ import { authenticator } from "~/services/auth.server";
 import { useState } from "react";
 import { json, redirect } from "@remix-run/node";
 import { commitSession, getSession } from "~/services/session.server";
+import { AuthorizationError } from "remix-auth";
 
 // Add this type definition
 type ActionData = {
@@ -23,25 +24,32 @@ export const action: ActionFunction = async ({ request }: ActionFunctionArgs) =>
     console.log("Form action:", action);
 
     if (action === "signup" || action === "login") {
-      const user = await authenticator.authenticate("form", request, {
-        failureRedirect: "/login",
-      });
-      console.log("Authentication result:", user);
-
-      if (user.id) {
-        console.log("User authenticated successfully, setting session");
-        const session = await getSession(request.headers.get("Cookie"));
-        session.set("userId", user.id);
-
-        console.log("Redirecting to dashboard");
-        return redirect("/dashboard", {
-          headers: {
-            "Set-Cookie": await commitSession(session),
-          },
+      try {
+        const user = await authenticator.authenticate("form", request, {
+          throwOnError: true
         });
-      } else {
-        console.error("Authentication failed:", user);
-        return json({ error: "Authentication failed" }, { status: 400 });
+        console.log("Authentication result:", user);
+
+        if (user.id) {
+          console.log("User authenticated successfully, setting session");
+          const session = await getSession(request.headers.get("Cookie"));
+          session.set("userId", user.id);
+
+          console.log("Redirecting to dashboard");
+          return redirect("/dashboard", {
+            headers: {
+              "Set-Cookie": await commitSession(session),
+            },
+          });
+        }
+      } catch (error) {
+        if (error instanceof AuthorizationError) {
+          console.error("Authentication error:", error.message);
+          return json({ error: error.message }, { status: 400 });
+        }
+        
+        console.error("Unexpected error:", error);
+        return json({ error: "An unexpected error occurred" }, { status: 500 });
       }
     }
 

@@ -19,6 +19,7 @@ model User {
   name      String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  emailVerified   DateTime?
   accounts  Account[]
 }
 
@@ -28,6 +29,7 @@ model Account {
   type              String
   provider          String
   providerAccountId String
+  verificationToken String?
   refreshToken      String?
   accessToken       String?
   expiresAt         Int?

@@ -6,6 +6,8 @@ import { FormStrategy } from "remix-auth-form";
 import invariant from "tiny-invariant";
 import { prisma } from "~/services/db.server";
 import bcryptjs from "bcryptjs";
+import { Resend } from 'resend';
+import { v4 as uuidv4 } from 'uuid';
 
 // Define a user type
 type User = {
@@ -102,6 +104,9 @@ authenticator.use(new GoogleStrategy(
   }
 ));
 
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 // Form Strategy for email/password
 authenticator.use(
   new FormStrategy(async ({ form }) => {
@@ -127,6 +132,8 @@ authenticator.use(
         },
       });
 
+      const verificationToken = uuidv4();
+
       await prisma.account.create({
         data: {
           userId: user.id,
@@ -134,10 +141,13 @@ authenticator.use(
           provider: 'email',
           providerAccountId: email,
           password: await bcryptjs.hash(password, 10),
+          verificationToken,
         },
       });
 
-      return user;
+      await sendVerificationEmail(email, verificationToken);
+
+      throw new Error("Please verify your email before logging in");
     } else if (action === "login") {
       if (!user) {
         throw new Error("Invalid login");
@@ -154,6 +164,10 @@ authenticator.use(
         throw new Error("Invalid login");
       }
 
+      if (!user.emailVerified) {
+        throw new Error("Please verify your email before logging in");
+      }
+
       const isValid = await bcryptjs.compare(password, account.password);
       if (!isValid) {
         throw new Error("Invalid login");
@@ -165,6 +179,21 @@ authenticator.use(
     }
   })
 );
+
+invariant(process.env.EMAIL_FROM, "EMAIL_FROM must be set");  
+
+async function sendVerificationEmail(email: string, token: string) {
+  try {
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM ?? 'onboarding@resend.dev',
+      to: email,
+      subject: 'Verify your email',
+      html: `<p>Click <a href="${process.env.BASE_URL}/verify-email/${token}">here</a> to verify your email.</p>`
+    });
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+  }
+}
 
 export const logout = async (request: Request) => {
   await authenticator.logout(request, { redirectTo: "/login" });
