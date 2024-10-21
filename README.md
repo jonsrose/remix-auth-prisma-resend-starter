@@ -26,8 +26,8 @@ This is a starter template for building a Remix React application with authentic
 
 1. Clone the repository:
    ```
-   git clone https://github.com/jonsrose/next-auth-prisma-resend-starter.git
-   cd next-auth-prisma-resend-starter
+   git clone https://github.com/jonsrose/remix-auth-prisma-resend-starter.git
+   cd remix-auth-prisma-resend-starter
    ```
 
 2. Install dependencies:
@@ -41,23 +41,20 @@ This is a starter template for building a Remix React application with authentic
 
 3. Set up your environment variables:
 
-   Database URL needs to be in .env for Prisma commands to work. Create a new `.env` file and add the following:
+  Create a new `.env` file and add the following:
    ```
+   BASE_URL=<your-base-url>
    DATABASE_URL=<your-database-url>
-   ```
-
-   Create a new `.env.local` file and add the following:
-   ```
-   NEXTAUTH_SECRET=<your-secret>
-   NEXTAUTH_URL=<your-url>
+   SESSION_SECRET=<your-session-secret>
    RESEND_API_KEY=<your-resend-api-key>
+   EMAIL_FROM=<your-email-from>
    GOOGLE_CLIENT_ID=<your-google-client-id>
    GOOGLE_CLIENT_SECRET=<your-google-client-secret>
-   GITHUB_ID=<your-github-id>
-   GITHUB_SECRET=<your-github-secret>
+   GITHUB_CLIENT_ID=<your-github-client-id>
+   GITHUB_CLIENT_SECRET=<your-github-client-secret>
 
    ```
-  To generate a secure value for NEXTAUTH_SECRET, you can use this command:
+  To generate a secure value for SESSION_SECRET, you can use this command:
    ```
    openssl rand -base64 32
    ```
@@ -67,7 +64,12 @@ This is a starter template for building a Remix React application with authentic
    npx prisma migrate dev
    ```
 
-5. Run the development server:
+5. Generate the Prisma client:
+   ```
+   npx prisma generate
+   ```
+
+6. Run the development server:
    ```
    npm run dev
    ```
@@ -76,36 +78,23 @@ This is a starter template for building a Remix React application with authentic
    yarn dev
    ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
+7. Open [http://localhost:5173](http://localhost:5173) in your browser to see the result.
 
 ## Project Structure
 
-- `/app`: Contains the Next.js 13+ app router pages and components
+- `/app`: Contains the Remix app pages and components
 - `/prisma`: Prisma schema and migrations
-- `/components`: Reusable React components
-- `/lib`: Utility functions and shared code
-- `/styles`: Global styles and Tailwind CSS configuration
-- `/types`: TypeScript type definitions (including NextAuth type extensions)
 
 ## Authentication
 
-This project uses NextAuth.js for authentication with Google, GitHub, and Email providers. You can configure providers and customize the authentication flow in `/app/api/auth/[...nextauth]/route.ts`.
-
+This project uses Remix Auth for authentication with Google, GitHub, and Email providers.
 ## Database
 
 Prisma is used as the ORM. The database schema is defined in `/prisma/schema.prisma`. Run `npx prisma studio` to open the Prisma Studio and manage your data.
 
 ## Email Functionality
 
-Resend is integrated for sending emails. Configure your Resend API key in the `.env.local` file and use the provided utility functions to send emails from your application. Note: For email verification to work with external email addresses, you may need to set up a custom domain with Resend.
-
-## TypeScript Types
-
-Custom TypeScript type definitions for NextAuth are located in `/types/next-auth.d.ts`. These extend the default NextAuth types to include additional properties like user ID.
-
-## Deployment
-
-This project can be deployed on platforms like Vercel or Netlify. Make sure to set up your environment variables in your deployment platform.
+Resend is integrated for sending emails. Configure your Resend API key in the `.env` file and use the provided utility functions to send emails from your application. Note: For email verification to work with external email addresses, you may need to set up a custom domain with Resend.
 
 ## Contributing
 
