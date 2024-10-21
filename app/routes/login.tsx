@@ -1,14 +1,14 @@
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import type { ActionFunction, ActionFunctionArgs, LoaderFunction } from "@remix-run/node";
-import { authenticator } from "~/services/auth.server";
+import { User, authenticator } from "~/services/auth.server";
 import { useState } from "react";
 import { json, redirect } from "@remix-run/node";
 import { commitSession, getSession } from "~/services/session.server";
 import { AuthorizationError } from "remix-auth";
-
-// Add this type definition
+// Update the ActionData type
 type ActionData = {
   error?: string;
+  message?: string;
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -25,15 +25,20 @@ export const action: ActionFunction = async ({ request }: ActionFunctionArgs) =>
 
     if (action === "signup" || action === "login") {
       try {
-        const user = await authenticator.authenticate("form", request, {
+        const result: User = await authenticator.authenticate("form", request, {
           throwOnError: true
         });
-        console.log("Authentication result:", user);
+        console.log("Authentication result:", result);
 
-        if (user.id) {
+        if (result.needsVerification) {
+          // Return the message as part of the action data
+          return json({ message: "Please check your email to verify your account before logging in." });
+        }
+
+        if (result.id) {
           console.log("User authenticated successfully, setting session");
           const session = await getSession(request.headers.get("Cookie"));
-          session.set("userId", user.id);
+          session.set("userId", result.id);
 
           console.log("Redirecting to dashboard");
           return redirect("/dashboard", {
@@ -100,7 +105,8 @@ export default function Login() {
           <button type="submit">Login with Google</button>
         </Form>
       </div>
-      {actionData?.error && <p>{actionData.error}</p>}
+      {actionData?.error && <p className="error">{actionData.error}</p>}
+      {actionData?.message && <p className="message">{actionData.message}</p>}
     </div>
   );
 }

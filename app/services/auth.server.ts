@@ -10,10 +10,11 @@ import { Resend } from 'resend';
 import { v4 as uuidv4 } from 'uuid';
 
 // Define a user type
-type User = {
+export type User = {
   id: string;
   email: string;
   name: string;
+  needsVerification?: boolean;
 };
 
 // Create an instance of the authenticator
@@ -149,7 +150,8 @@ authenticator.use(
 
       await sendVerificationEmail(email, verificationToken);
 
-      throw new Error("Please verify your email before logging in");
+      // Instead of throwing an error, return a special object
+      return { id: user.id, email: user.email, name: user.name, needsVerification: true };
     } else if (action === "login") {
       if (!user) {
         throw new Error("Invalid login");
