@@ -73,6 +73,8 @@ authenticator.use(new GoogleStrategy(
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: `${process.env.BASE_URL}/auth/google/callback`,
+    prompt: "select_account",
+    accessType: "offline",
   },
   async ({ profile }) => {
     const email = profile.emails[0].value;
